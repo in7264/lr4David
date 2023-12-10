@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSA Digital Signature</title>
+</head>
+<body>
+
+<h2>RSA Digital Signature</h2>
+
+<label for="primeP">Enter prime number P:</label>
+<input type="text" id="primeP" placeholder="Enter P">
+
+<label for="primeQ">Enter prime number Q:</label>
+<input type="text" id="primeQ" placeholder="Enter Q">
+
+<label for="publicExponent">Enter public exponent e:</label>
+<input type="text" id="publicExponent" placeholder="Enter e">
+
+<button onclick="generateKeys()">Generate Keys</button>
+
+<h3>Public Key (n, e):</h3>
+<p id="publicKey"></p>
+
+<h3>Private Key (n, d):</h3>
+<p id="privateKey"></p>
+
+<label for="inputText">Enter text for signing:</label>
+<textarea id="inputText" placeholder="Enter text"></textarea>
+
+<button onclick="sign()">Sign</button>
+<textarea id="signature" placeholder="Digital Signature"></textarea>
+
+<label for="verifyText">Enter text to verify:</label>
+<textarea id="verifyText" placeholder="Enter text"></textarea>
+
+<label for="verifySignature">Enter signature to verify:</label>
+<textarea id="verifySignature" placeholder="Enter Digital Signature"></textarea>
+
+<button onclick="verify()">Verify</button>
+<p id="verificationResult"></p>
+
+<script>
+    let p, q, n, e, d;
+
+    function generateKeys() {
+        p = parseInt(document.getElementById("primeP").value);
+        q = parseInt(document.getElementById("primeQ").value);
+        e = parseInt(document.getElementById("publicExponent").value);
+
+        n = p * q;
+        const phi = (p - 1) * (q - 1);
+
+        d = modInverse(e, phi);
+
+        document.getElementById("publicKey").innerText = `n: ${n}, e: ${e}`;
+        document.getElementById("privateKey").innerText = `n: ${n}, d: ${d}`;
+    }
+
+    function modInverse(a, m) {
+        for (let i = 1; i < m; i++) {
+            if ((a * i) % m === 1) {
+                return i;
+            }
+        }
+        return 1;
+    }
+
+    function sign() {
+        const plaintext = document.getElementById("inputText").value;
+        const hashedPlaintext = hash(plaintext); // You can use a secure hash function
+        const signature = powerModulo(hashedPlaintext, d, n);
+
+        document.getElementById("signature").value = signature;
+    }
+
+    function verify() {
+        const plaintext = document.getElementById("verifyText").value;
+        const hashedPlaintext = hash(plaintext); // You can use the same hash function as in the sign() function
+        const receivedSignature = parseInt(document.getElementById("verifySignature").value);
+
+        const result = powerModulo(receivedSignature, e, n);
+
+        if (result === hashedPlaintext) {
+            document.getElementById("verificationResult").innerText = "Signature is valid!";
+        } else {
+            document.getElementById("verificationResult").innerText = "Signature is not valid!";
+        }
+    }
+
+    function powerModulo(base, exponent, modulus) {
+        let result = 1;
+        base = base % modulus;
+        while (exponent > 0) {
+            if (exponent % 2 === 1) {
+                result = (result * base) % modulus;
+            }
+            exponent = exponent >> 1;
+            base = (base * base) % modulus;
+        }
+        return result;
+    }
+
+    // This is a simple hash function; in practice, you should use a secure hash function like SHA-256.
+    function hash(input) {
+        let hashValue = 0;
+        for (let i = 0; i < input.length; i++) {
+            hashValue = (hashValue << 5) - hashValue + input.charCodeAt(i);
+            hashValue &= hashValue;
+        }
+        return hashValue;
+    }
+</script>
+
+</body>
+</html>
